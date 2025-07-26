@@ -1,0 +1,154 @@
+AGT	Tenuous
+ALAD	Tenuous
+ALS2	Tenuous
+ALS3	Tenuous
+ALS7	Tenuous
+ANG	Moderate evidence
+ANXA11	Definitive ALS gene
+APEX1	Tenuous
+APOE	Tenuous
+AR	Tenuous
+ARHGEF28Ê	Moderate evidence
+ARPP21	Tenuous
+ATXN1	Strong evidence
+ATXN2	Clinical modifier
+B4GALT6	Tenuous
+BCL11B	Tenuous
+BCL6	Tenuous
+C9orf72	Definitive ALS gene
+CAMTA1	Clinical modifier
+CAV1	Unassigned
+CAV2	Unassigned
+CCNF	Strong evidence
+CCS	Tenuous
+CDH13	Tenuous
+CDH22	Moderate evidence
+CFAP410	Strong evidence
+CHCHD10	Definitive ALS gene
+CHGB	Tenuous
+CHMP2B	Moderate evidence
+CNTF	Tenuous
+CNTN4	Tenuous
+CNTN6	Moderate evidence
+CRIM1	Tenuous
+CRYM	Moderate evidence
+CSNK1G3	Moderate evidence
+CST3	Tenuous
+CX3CR1	Moderate evidence
+CYP2D6	Tenuous
+DAO	Moderate evidence
+DCTN1	Tenuous
+DIAPH3	Tenuous
+DISC1	Tenuous
+DNAJC7	Moderate evidence
+DNMT3A	Moderate evidence
+DNMT3B	Tenuous
+DOC2B	Tenuous
+DPP6	Tenuous
+DYNC1H1	Tenuous
+EFEMP1	Tenuous
+ELP3	Tenuous
+ENAH	Clinical modifier
+EphA3	Tenuous
+EPHA4	Definitive ALS gene
+ERBB4	Moderate evidence
+ERLIN1	Tenuous
+EWSR1	Tenuous
+FEZF2	Tenuous
+FGGY	Tenuous
+FIG4	Moderate evidence
+FUS	Definitive ALS gene
+GARS	Tenuous
+GLE1	Moderate evidence
+GLT8D1	Tenuous
+GPX3	Moderate evidence
+GRB14	Tenuous
+GRN	Tenuous
+HEXA	Tenuous
+HFE	Strong evidence
+HNRNPA1	Definitive ALS gene
+HNRNPA2B1	Tenuous
+ITPR2	Tenuous
+KDR	Tenuous
+KIF5A	Definitive ALS gene
+KIFAP3	Tenuous
+LIF	Tenuous
+LIPC	Tenuous
+LMNB1	Moderate evidence
+LOX	Tenuous
+LUM	Tenuous
+MAOB	Tenuous
+MAPT	Tenuous
+MATR3	Tenuous
+MOBP	Tenuous
+MTND2P1	Tenuous
+NAIP	Tenuous
+NEFH	Tenuous
+NEFL	Tenuous
+NEK1	Definitive ALS gene
+NETO1	Tenuous
+NIPA1	Strong evidence
+NT5C1A	Tenuous
+ODR4	Tenuous
+OGG1	Tenuous
+OMA1	Tenuous
+OPTN	Definitive ALS gene
+PARK7	Tenuous
+PCP4	Tenuous
+PFN1	Definitive ALS gene
+PLEKHG5	Tenuous
+PNPLA6	Tenuous
+PON1	Tenuous
+PON2	Tenuous
+PON3	Tenuous
+PRPH	Tenuous
+PSEN1	Tenuous
+PVR	Tenuous
+RAMP3	Tenuous
+RBMS1	Tenuous
+RFTN1	Tenuous
+RNASE2	Tenuous
+RNF19A	Tenuous
+SARM1	Moderate evidence
+SCFD1	Strong evidence
+SCN7A	Tenuous
+SELL	Tenuous
+SEMA6A	Tenuous
+SETX	Tenuous
+SIGMAR1	Tenuous
+SLC1A2	Tenuous
+SLC39A11	Tenuous
+SLC52A3	Tenuous
+SMN1	Moderate evidence
+SMN2	Tenuous
+SNCG	Tenuous
+SOD1	Definitive ALS gene
+SOD2	Tenuous
+SOX5	Tenuous
+SPAST	Tenuous
+SPG11	Tenuous
+SPG7	Tenuous
+SQSTM1	Moderate evidence
+SS18L1	Moderate evidence
+SUSD1	Tenuous
+SYNE1	Tenuous
+SYT9	Tenuous
+TAF15	Tenuous
+TARDBP	Definitive ALS gene
+TBK1	Definitive ALS gene
+TIA1	Tenuous
+TNIP1	Moderate evidence
+TRPM7	Tenuous
+TUBA4A	Strong evidence
+UBQLN1	Tenuous
+UBQLN2	Definitive ALS gene
+UNC13A	Definitive ALS gene
+VAPB	Definitive ALS gene
+VCP	Definitive ALS gene
+VDR	Tenuous
+VEGFA	Tenuous
+VPS54	Tenuous
+VRK1	Tenuous
+ZFP64	Tenuous
+ZNF512B	Tenuous
+ZNF746	Tenuous

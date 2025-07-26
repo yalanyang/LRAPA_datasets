@@ -1,0 +1,13 @@
+sample_id  condition
+N1_C       Cb
+N1_H       Hy
+N1_T       Tc
+N28_C      Cb
+N28_H      Hy
+N28_T      Tc
+R2_C       Cb
+R2_H       Hy
+R2_T       Tc
+R8_C       Cb
+R8_H       Hy
+R8_T       Tc
