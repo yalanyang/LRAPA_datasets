@@ -1,86 +1,114 @@
-library(tidyverse)
-library(readxl)
-library(ggpubr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggsci)
+library(tibble)
+library(stringr)
+library(pheatmap)
+library(RColorBrewer)
 
-##Figure 6B
-fetal_SE <- read.table("Figure5/human_fetal_exon-PAS.full-length.coordination.chiqtest.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-fetal_SE$type <- "fetal_se_sig"
-fetal_SE$type[which(fetal_SE$FDR >= 0.05)] = "fetal_se_nonsig"
-adult_SE  <- read.table("Figure5/human_encode_exon-PAS.coordination.chiqtest0203.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-adult_SE$type <- "adult_se_sig"
-adult_SE$type[which(adult_SE$FDR >= 0.05)] = "adult_se_nonsig"
-
-perform_fisher_test <- function(disease_genes, sig_genes, nonsig_genes) {
-  in_sig <- sum(disease_genes %in% sig_genes)
-  in_nonsig <- sum(disease_genes %in% nonsig_genes)
-  not_in_sig <- length(sig_genes) - in_sig
-  not_in_nonsig <- length(nonsig_genes) - in_nonsig
-
-  contingency_table <- matrix(c(in_sig, in_nonsig, not_in_sig, not_in_nonsig),
-                              nrow = 2, 
-                              dimnames = list(c("In Disease", "Not in Disease"),
-                                              c("adult_tss_sig", "adult_tss_nonsig")))
-  fisher_result <- fisher.test(contingency_table)
-  p_value <- fisher_result$p.value
-  odds_ratio <- fisher_result$estimate
-  conf_int <- fisher_result$conf.int
-
-  return(c(in_sig=in_sig, in_nonsig=in_nonsig, not_in_sig=not_in_sig, not_in_nonsig=not_in_nonsig, p_value = p_value, odds_ratio = odds_ratio, conf_lower = conf_int[1], conf_upper = conf_int[2]))
+#Figure 6B
+count <- read.table("Figure6/iNGN.count.txt",sep="\t",header=T)
+sum_counts <- rowSums(count[, 2:8])
+count <- count[sum_counts > 40, ]
+samples <- read.table("Figure6/sample.txt", sep = ",", header = T, stringsAsFactors = FALSE)
+sample_id <- samples$sample_id
+counts=count[,c("gene_name", "PAS_ID", sample_id)]
+colnames(counts)[1] <- "gene_id"
+colnames(counts)[2] <- "feature_id"
+counts <- as.data.frame(counts)
+PAU <- counts[,1:2]
+for (sample in sample_id) {
+  total_reads_per_gene <- tapply(counts[,sample], counts$gene_id, sum)
+  PAU[,sample] <- counts[,sample] / total_reads_per_gene[counts$gene_id]
 }
+PAU <- PAU[complete.cases(PAU[,3:9]),]
 
-rmats <- read.table("Figure6/SE.MATS.JCEC.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-rmats <- rmats %>% filter(FDR <= 0.05 & abs(IncLevelDifference) > 0.05) %>% arrange(FDR)
-rmats$exonStart_0base=rmats$exonStart_0base+1
-rmats$exon <- paste0(rmats$chr,":",rmats$exonStart_0base,"-",rmats$exonEnd,":",rmats$strand)
-adult_SE_sig <- adult_SE %>% filter(FDR <= 0.05) %>% arrange(FDR)
-adult_SE_rmats <- inner_join(rmats, adult_SE_sig, by="exon")
-SE_rmats_adult <- data.frame(perform_fisher_test(unique(rmats$exon), adult_SE[adult_SE$type=="adult_se_sig",]$exon, adult_SE[adult_SE$type=="adult_se_nonsig",]$exon))
-SE_rmats_fetal <- data.frame(perform_fisher_test(unique(rmats$exon), fetal_SE[fetal_SE$type=="fetal_se_sig",]$exon, fetal_SE[fetal_SE$type=="fetal_se_nonsig",]$exon))
- 
-SE_rmats <- cbind(SE_rmats_adult,SE_rmats_fetal)
-colnames(SE_rmats) <- c("adult","fetal")
-SE_rmats <- data.frame(t(SE_rmats))
-SE_rmats$stage <- rownames(SE_rmats)
+PAU <- PAU %>%
+  mutate(mean_value = rowMeans(select(., -gene_id, -feature_id), na.rm = TRUE)) %>%
+  filter(mean_value >= 0.05 & mean_value <= 0.95) %>%
+  select(-mean_value)
 
-SE_rmats$p_label <- sprintf("p = %.2g", SE_rmats$p_value) 
-ggplot(SE_rmats, aes(x = odds_ratio.odds.ratio, y = stage)) +
-  geom_point(size = 3, position = position_dodge(width = 0.5),color = "#E64B35FF") +  # Dots for OR
-  geom_errorbarh(aes(xmin = conf_lower, xmax = conf_upper), height = 0.2, position = position_dodge(width = 0.5)) +  # 95% CI
-  geom_text(aes(label = p_label), hjust = -0.2, size = 3.5, position = position_dodge(width = 0.5)) +  # Show p-values next to points
-  theme_minimal() +
-  labs(
-       x = "Odds Ratio (95% confidence interval)") +
-  geom_vline(xintercept = 1, linetype = "dashed", color = "black") +  # Reference line at OR = 1
-  theme(axis.text.y = element_text(size = 10), 
-        axis.text.x = element_text(size = 10),
-        plot.title = element_text(size = 12, face = "bold"))
+transposed_combat <- t(PAU[,3:9])
+pca_proc <- prcomp(transposed_combat[,apply(transposed_combat, 2, var, na.rm=TRUE) != 0],scale=TRUE,center=TRUE)
+summary(pca_proc)
+plotData = samples[,c("sample_id","Group")]
+plotData$PC1 <- pca_proc$x[,1]
+plotData$PC2 <- pca_proc$x[,2]
+pdf("PCA12_based_PA_count.pdf", 4,3.5)
+ggplot(plotData, aes(PC1, PC2, color = Group)) +
+  geom_point(size = 5) +
+  scale_color_manual(values = c("#E64B35", "#4DBBD5", "#00A087")) +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 13),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.6),
+    panel.grid.major = element_line(color = "grey85"),
+    panel.grid.minor = element_blank()
+  )
+dev.off()
+
+#Figure 6C
+WARM <- read.delim("Figure6/WARM.TUTR.txt",header = T)
+rownames(WARM) <- WARM$gene_id
+WARM$D0_WARM <-  rowMeans(WARM[,2:3],na.rm = TRUE)
+WARM$D7_WARM <-  rowMeans(WARM[,4:5],na.rm = TRUE)
+WARM$D12_WARM <-  rowMeans(WARM[,6:8],na.rm = TRUE)
+WARM <- WARM %>%  dplyr::select(gene_id,D0_WARM,D7_WARM, D12_WARM) 
+WARM <- na.omit(WARM)
+long_data <- WARM %>%
+  pivot_longer(cols = c(D0_WARM, D7_WARM,D12_WARM), values_to = "WARM")
+
+ggplot(long_data, aes(x = WARM, color = name)) +
+  stat_ecdf(geom = "step", size = 1) +
+  labs(title = "Cumulative Density Plot of WARM values",
+       x = "WARM",
+       y = "Cumulative Density") +
+  theme_minimal() + 
+  scale_color_manual(values = c("D0_WARM" = nrc_colors[1], 
+                                "D7_WARM" = nrc_colors[3], 
+                                "D12_WARM" = nrc_colors[2])) + 
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1)  # Add border around the plot
+  )
 
 
+#Figure 6E
+D7_D0 <- read.table("Figure6/D7_D0.TUTR.diff.DRIMSeq.txt",sep="\t",header=T)
+D12_D0 <- read.table("Figure6/D12_D0.TUTR.diff.DRIMSeq.txt",sep="\t",header=T)
+D12_D7 <- read.table("Figure6/D12_D7.TUTR.diff.DRIMSeq.txt",sep="\t",header=T)
+D7_D0 <- D7_D0 %>% dplyr::filter(sig == "TRUE")
+D12_D0 <- D12_D0 %>% dplyr::filter(sig == "TRUE") 
+D12_D7 <- D12_D7 %>% dplyr::filter(sig == "TRUE") 
 
-##Figure 6C
-apalyzer_UTR <- read.table("Figure6/APAlyzer/3UTRAPA.diff.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-apalyzer_IPA <- read.table("Figure6/APAlyzer/IPAmuti.diff.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-apalyzer_UTR <- apalyzer_UTR %>% filter(pvalue <= 0.05) %>% arrange(pvalue)
-apalyzer_IPA <- apalyzer_IPA %>% filter(pvalue <= 0.05) %>% arrange(pvalue)
-apalyzer_diff <- unique(c(apalyzer_UTR$gene_symbol,apalyzer_IPA$gene_symbol))
-SE_apalyzer_adult <- data.frame(perform_fisher_test(unique(apalyzer_diff), unique(adult_SE[adult_SE$type=="adult_se_sig",]$gene_id), unique(adult_SE[adult_SE$type=="adult_se_nonsig",]$gene_id)))
-SE_apalyzer_fetal <- data.frame(perform_fisher_test(unique(apalyzer_diff), unique(fetal_SE[fetal_SE$type=="fetal_se_sig",]$gene_id), unique(fetal_SE[fetal_SE$type=="fetal_se_nonsig",]$gene_id)))
+diff_gene <- unique(c(D7_D0$gene_id,D12_D0$gene_id,D12_D7$gene_id))
+WARM_diff <- WARM[WARM$gene_id %in% diff_gene, ]
+pheatmap(WARM_diff[,2:8],cluster_rows=T,scale="row",cluster_col=F,gaps_col =c(2,4),show_rownames=F,show_colnames =T, 
+         cellwidth = 16, cellheight = 0.2, filename = "different_APA.TUTR.pdf",col=rev(colorRampPalette(brewer.pal(10, "RdBu"))(20)))
 
-SE_apalyzer <- cbind(SE_apalyzer_adult,SE_apalyzer_fetal)
-colnames(SE_apalyzer) <- c("adult","fetal")
-SE_apalyzer <- data.frame(t(SE_apalyzer))
-SE_apalyzer$stage <- rownames(SE_apalyzer)
-SE_apalyzer$p_label <- sprintf("p = %.2g", SE_apalyzer$p_value) 
-ggplot(SE_apalyzer, aes(x = odds_ratio.odds.ratio, y = stage)) +
-  geom_point(size = 3, position = position_dodge(width = 0.5),color = "#E64B35FF") +  # Dots for OR
-  geom_errorbarh(aes(xmin = conf_lower, xmax = conf_upper), height = 0.2, position = position_dodge(width = 0.5)) +  # 95% CI
-  geom_text(aes(label = p_label), hjust = -0.2, size = 3.5, position = position_dodge(width = 0.5)) +  # Show p-values next to points
-  theme_minimal() +
-  labs(
-    x = "Odds Ratio (95% confidence interval)") +
-  geom_vline(xintercept = 1, linetype = "dashed", color = "black") +  # Reference line at OR = 1
-  theme(axis.text.y = element_text(size = 10), 
-        axis.text.x = element_text(size = 10),
-        plot.title = element_text(size = 12, face = "bold"))
 
+#Figure 6G
+## SE-TSS coupling
+all <- read.table("Figure6/iNGN_merge_exon-PA.coordination.chiqtest.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+all <- all %>% dplyr::filter(FDR < 0.05)
+human_fetal_SE <- read.table("Figure5/human_fetal_SE_PA_coupling_0622.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+human_fetal_SE_sig  <- human_fetal_SE %>% dplyr::filter(FDR < 0.05)
+human_adult_SE  <- read.table("Figure5/human_encode_SE_PA_coupling_0622.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+human_adult_SE_sig  <- human_adult_SE %>% dplyr::filter(FDR < 0.05)
+x3 <- list(iNGN = unique(all$gene_id), fetal = unique(human_fetal_SE_sig$gene_id), adult = unique(human_adult_SE_sig$gene_id))
+plot(Venn(x3)) 
+
+## PA-TSS coupling
+all <- read.table("Figure6/iNGN_merge_TSS-PA.coordination.chiqtest.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+all <- all %>% dplyr::filter(FDR < 0.05)
+human_fetal_TSS <- read.table("Figure5/human_fetal_TSS_PA_coupling_0622.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+human_fetal_TSS_sig <- human_fetal_TSS %>% dplyr::filter(FDR < 0.05)
+human_adult_TSS <- read.table("Figure5/human_encode_TSS_PA_coupling_0622.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+human_adult_TSS_sig <- human_adult_TSS %>% dplyr::filter(FDR < 0.05)
+x1 <- list(iNGN = all$gene_id, fetal = unique(human_fetal_TSS_sig$gene_id), adult = unique(human_adult_TSS_sig$gene_id))
+pdf("Venn.coupling_TSS.gene_level.pdf", 4,4)
+plot(Venn(x1)) 
 

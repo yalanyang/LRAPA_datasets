@@ -4,7 +4,6 @@ library(ggpubr)
 library(readr)
 library(UpSetR)
 
-
 gtf_file <- "reference/gencode.v40.annotation_utr.gtf"
 gtf <- read.delim(gtf_file, header = FALSE, comment.char = "#",
                   col.names = c("seqname", "source", "feature", "start", "end", 
@@ -23,7 +22,6 @@ gtf_genes$gene_id <- sub("\\..*", "", gtf_genes$gene_id)
 fetal_tss <- read.table("Figure5/human_fetal_TSS-PAS.coordination.chiqtest.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
 fetal_tss$type <- "fetal_tss_sig"
 fetal_tss$type[which(fetal_tss$FDR >= 0.05)] = "fetal_tss_nonsig"
-
 fetal_tss_anno <- fetal_tss %>% left_join(SFARI, by = c("gene_id"="gene.symbol"))
 fetal_tss <- fetal_tss %>% select("gene_id","type") %>% unique()
 
@@ -34,6 +32,40 @@ adult_tss_anno <- adult_tss %>% left_join(SFARI, by = c("gene_id"="gene.symbol")
 adult_tss <- adult_tss %>% select("gene_id","type") %>% unique()
 
 
+##Figure 5B
+fetal_TSS_sig <- fetal_TSS %>% dplyr::filter(FDR < 0.05)
+adult_TSS_sig <- adult_TSS %>% dplyr::filter(FDR < 0.05)
+fetal_SE <- read.table("Figure5/human_fetal_exon-PAS.full-length.coordination.chiqtest.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+fetal_SE_sig  <- fetal_SE %>% dplyr::filter(FDR < 0.05)
+adult_SE  <- read.table("Figure5/human_encode_exon-PAS.coordination.chiqtest0203.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
+adult_SE_sig  <- adult_SE %>% dplyr::filter(FDR < 0.05)
+listInput <- list(fetal_TSS=unique(fetal_TSS_sig$gene_id),adult_TSS=unique(adult_TSS_sig$gene_id),
+                  fetal_SE=unique(fetal_SE_sig$gene_id),adult_SE=unique(adult_SE_sig$gene_id))
+upset(fromList(listInput), order.by = "freq")
+
+##Figure 5C
+
+
+enrichment <- read.table("Figure5/Figure5C.enrichment.txt", sep = "\t", header = T)
+library(ggplot2)
+enrichment$Type <- factor(enrichment$Type, levels = c("DAG", "DIU", "DET", "DEG"))
+ggplot(enrichment, aes(x = odds_ratio, y = Type, color = group)) +
+  geom_point(size = 3, position = position_dodge(width = 0.5)) +
+  geom_errorbarh(aes(xmin = conf_lower, xmax = conf_upper), height = 0.2, position = position_dodge(width = 0.5)) +
+  geom_text(aes(label = paste0("P = ", format(p_value, scientific = TRUE))), 
+            hjust = -0.2, size = 2) +  
+  theme_minimal() +
+  labs(x = "Odds Ratio",  color = "Coupling type") +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "black") +  
+  theme(panel.border = element_rect(color = "black", fill = NA, size = 1)) + 
+  theme(axis.text.y = element_text(size = 10), 
+        axis.text.x = element_text(size = 10),
+        plot.title = element_text(size = 12, face = "bold"))
+
+
+
+
+##Figure 5D
 perform_fisher_test <- function(disease_genes, sig_genes, nonsig_genes) {
   in_sig <- sum(disease_genes %in% sig_genes)
   in_nonsig <- sum(disease_genes %in% nonsig_genes)
@@ -52,38 +84,6 @@ perform_fisher_test <- function(disease_genes, sig_genes, nonsig_genes) {
   return(c(in_sig=in_sig, in_nonsig=in_nonsig, not_in_sig=not_in_sig, not_in_nonsig=not_in_nonsig, p_value = p_value, odds_ratio = odds_ratio, conf_lower = conf_int[1], conf_upper = conf_int[2]))
 }
 
-
-##Figure 5B
-enrichment <- read.table("Figure5/Figure5B.enrichment.txt", sep = "\t", header = T)
-library(ggplot2)
-enrichment$Type <- factor(enrichment$Type, levels = c("DAG", "DIU", "DET", "DEG"))
-ggplot(enrichment, aes(x = odds_ratio, y = Type, color = group)) +
-  geom_point(size = 3, position = position_dodge(width = 0.5)) +
-  geom_errorbarh(aes(xmin = conf_lower, xmax = conf_upper), height = 0.2, position = position_dodge(width = 0.5)) +
-  geom_text(aes(label = paste0("P = ", format(p_value, scientific = TRUE))), 
-            hjust = -0.2, size = 2) +  
-  theme_minimal() +
-  labs(x = "Odds Ratio",  color = "Coupling type") +
-  geom_vline(xintercept = 1, linetype = "dashed", color = "black") +  
-  theme(panel.border = element_rect(color = "black", fill = NA, size = 1)) + 
-  theme(axis.text.y = element_text(size = 10), 
-        axis.text.x = element_text(size = 10),
-        plot.title = element_text(size = 12, face = "bold"))
-
-
-##Figure 5C
-fetal_TSS_sig <- fetal_TSS %>% dplyr::filter(FDR < 0.05)
-adult_TSS_sig <- adult_TSS %>% dplyr::filter(FDR < 0.05)
-fetal_SE <- read.table("Figure5/human_fetal_exon-PAS.full-length.coordination.chiqtest.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-fetal_SE_sig  <- fetal_SE %>% dplyr::filter(FDR < 0.05)
-adult_SE  <- read.table("Figure5/human_encode_exon-PAS.coordination.chiqtest0203.txt", sep = "\t", header = T, stringsAsFactors = FALSE)
-adult_SE_sig  <- adult_SE %>% dplyr::filter(FDR < 0.05)
-listInput <- list(fetal_TSS=unique(fetal_TSS_sig$gene_id),adult_TSS=unique(adult_TSS_sig$gene_id),
-                  fetal_SE=unique(fetal_SE_sig$gene_id),adult_SE=unique(adult_SE_sig$gene_id))
-upset(fromList(listInput), order.by = "freq")
-
-
-##Figure5D
 splicesome <- read.table('reference/genelist/Splicesome',header=F,sep='\t')
 splicesome <- as.character(splicesome$V1)
 constrain <- read.table('reference/genelist/Constrained_gene.txt',header=T,sep='\t')
@@ -109,7 +109,6 @@ target_fetal_tss <- lapply(names(target), function(d) {
   perform_fisher_test(target[[d]], fetal_tss[fetal_tss$type=="fetal_tss_sig",]$gene_id, fetal_tss[fetal_tss$type=="fetal_tss_nonsig",]$gene_id)
 })
 target_fetal_tss <- as.data.frame(do.call(rbind, target_fetal_tss), row.names = names(target))
-
 target_fetal_tss$type <- "fetal_tss"
 target_fetal_tss$disease <- rownames(target_fetal_tss)
 target_adult_tss$type <- "adult_tss"
@@ -187,7 +186,6 @@ colnames(BIP) <- c("gene.symbol","disease")
 AD <-  read.table('reference/genelist/AD_associated_genes.txt',header=F,sep='\t')
 AD$disease <- "AD"
 colnames(AD) <- c("gene.symbol","disease")
-
 disease <- list(BIP=BIP$gene.symbol,ASD=ASD$gene.symbol,epilepsy=epilepsy$gene.symbol, SCZ=SCZ$gene.symbol,
                 DDD=DDD$gene.symbol,AD=AD$gene.symbol)
 
@@ -203,7 +201,6 @@ disease_fetal_tss <- lapply(names(disease), function(d) {
  perform_fisher_test(disease[[d]], fetal_tss[fetal_tss$type=="fetal_tss_sig",]$gene_id, fetal_tss[fetal_tss$type=="fetal_tss_nonsig",]$gene_id)
 })
 disease_fetal_tss <- as.data.frame(do.call(rbind, disease_fetal_tss), row.names = names(disease))
-
 
 disease_adult_tss$type <- "adult_tss"
 disease_adult_tss$disease <- rownames(disease_adult_tss)

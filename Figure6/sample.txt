@@ -1,0 +1,9 @@
+sample_id,Group
+bc01,D0
+bc02,D0
+bc05,D7
+bc06,D7
+iNGN_D12_rep1,D12
+iNGN_D12_rep2,D12
+iNGN_D12_rep3,D12
+
